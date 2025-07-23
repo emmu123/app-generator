@@ -3,233 +3,553 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI App Generator</title>
+    <title>AI Chat Assistant</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
-        textarea {
-            height: 100px;
-            resize: vertical;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        button {
-            background-color: #007bff;
+
+        .chat-container {
+            width: 90%;
+            max-width: 800px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            max-width: 80%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .assistant .message-avatar {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .message-content {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 18px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .assistant .message-content {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            max-width: 80%;
+            align-self: flex-start;
+        }
+
+        .typing-dots {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 18px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #64748b;
+            border-radius: 50%;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #messageInput {
             width: 100%;
+            min-height: 44px;
+            max-height: 120px;
+            padding: 12px 50px 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 22px;
+            font-size: 16px;
+            line-height: 1.4;
+            resize: none;
+            outline: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        #messageInput:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
         }
-        button:disabled {
-            background-color: #ccc;
+
+        #messageInput::placeholder {
+            color: #94a3b8;
+        }
+
+        .send-button {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
         }
-        .loading {
-            display: none;
+
+        .clear-chat {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .clear-chat:hover {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .welcome-message {
             text-align: center;
-            margin: 20px 0;
+            color: #64748b;
+            margin: 40px 0;
+            font-style: italic;
         }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 2s linear infinite;
-            margin: 0 auto;
+
+        /* Scrollbar styling */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
         }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            display: none;
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
         }
-        .result.success {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
-        .result.error {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        .download-btn {
-            background-color: #28a745;
-            margin-top: 10px;
-            width: auto;
-            display: inline-block;
-            padding: 8px 20px;
-        }
-        .download-btn:hover {
-            background-color: #218838;
+
+        /* Mobile responsive */
+        @media (max-width: 640px) {
+            .chat-container {
+                width: 95%;
+                height: 95vh;
+                border-radius: 15px;
+            }
+
+            .chat-header {
+                padding: 15px;
+            }
+
+            .chat-header h1 {
+                font-size: 20px;
+            }
+
+            .status-indicator {
+                top: 15px;
+                right: 15px;
+            }
+
+            .chat-messages {
+                padding: 15px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .chat-input {
+                padding: 15px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚀 AI App Generator</h1>
-        
-        <form id="generateForm">
-            <div class="form-group">
-                <label for="prompt">Describe your app:</label>
-                <textarea 
-                    id="prompt" 
-                    name="prompt" 
-                    placeholder="e.g., A simple todo list app with add, delete, and mark complete functionality"
-                    required
-                ></textarea>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 AI Chat Assistant</h1>
+            <p>Powered by Puter AI - Ask me anything!</p>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span style="font-size: 12px;">Online</span>
             </div>
-            
-            <div class="form-group">
-                <label for="framework">Choose framework:</label>
-                <select id="framework" name="framework" required>
-                    <option value="">Select a framework...</option>
-                    <option value="html">HTML/CSS/JavaScript</option>
-                    <option value="react">React</option>
-                    <option value="vue">Vue.js</option>
-                    <option value="angular">Angular</option>
-                    <option value="nodejs">Node.js</option>
-                    <option value="python">Python</option>
-                </select>
-            </div>
-            
-            <button type="submit" id="generateBtn">Generate App</button>
-        </form>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Generating your app... This may take a moment.</p>
         </div>
-        
-        <div class="result" id="result"></div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                👋 Welcome! I'm your AI assistant. How can I help you today?
+            </div>
+        </div>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="message-avatar">
+                <span>🤖</span>
+            </div>
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        </div>
+
+        <div class="chat-input">
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
+                        rows="1"
+                    ></textarea>
+                    <button class="send-button" id="sendButton" type="button">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <button class="clear-chat" id="clearChat">Clear</button>
+            </div>
+        </div>
     </div>
 
     <!-- Puter SDK -->
     <script src="https://js.puter.com/v2/"></script>
-    
-    <script>
-        const form = document.getElementById('generateForm');
-        const generateBtn = document.getElementById('generateBtn');
-        const loading = document.getElementById('loading');
-        const result = document.getElementById('result');
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const prompt = document.getElementById('prompt').value;
-            const framework = document.getElementById('framework').value;
-            
-            if (!prompt.trim() || !framework) {
-                showResult('Please fill in all fields.', 'error');
-                return;
+    <script>
+        class ChatApp {
+            constructor() {
+                this.chatMessages = document.getElementById('chatMessages');
+                this.messageInput = document.getElementById('messageInput');
+                this.sendButton = document.getElementById('sendButton');
+                this.clearButton = document.getElementById('clearChat');
+                this.typingIndicator = document.getElementById('typingIndicator');
+                
+                this.initializeEventListeners();
+                this.adjustTextareaHeight();
             }
 
-            // Show loading state
-            generateBtn.disabled = true;
-            loading.style.display = 'block';
-            result.style.display = 'none';
-
-            try {
-                // Create the AI prompt
-                const aiPrompt = `Generate a complete, functional ${framework} app with the following description: ${prompt}. 
-
-Requirements:
-- Return only the code, no explanations
-- Make it a single file if possible
-- Include all necessary HTML, CSS, and JavaScript
-- Make it fully functional and ready to run
-- Use modern best practices
-
-Description: ${prompt}`;
-
-                console.log('Sending prompt to Puter AI...');
+            initializeEventListeners() {
+                // Send message on button click
+                this.sendButton.addEventListener('click', () => this.sendMessage());
                 
-                // Use Puter AI to generate the code
-                const response = await puter.ai.chat(aiPrompt);
-                
-                console.log('Received response from Puter AI');
-                
-                // Save the generated code to the server
-                const saveResponse = await fetch('/save-code', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        code: response,
-                        framework: framework,
-                        prompt: prompt
-                    })
+                // Send message on Enter (but not Shift+Enter)
+                this.messageInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
                 });
 
-                const saveResult = await saveResponse.json();
+                // Auto resize textarea
+                this.messageInput.addEventListener('input', () => this.adjustTextareaHeight());
 
-                if (saveResult.success) {
-                    showResult(
-                        `App generated successfully! <a href="${saveResult.downloadUrl}" class="download-btn">Download ZIP</a>`,
-                        'success'
-                    );
-                } else {
-                    throw new Error(saveResult.error || 'Failed to save generated code');
+                // Clear chat
+                this.clearButton.addEventListener('click', () => this.clearChat());
+
+                // Focus input on load
+                this.messageInput.focus();
+            }
+
+            adjustTextareaHeight() {
+                this.messageInput.style.height = 'auto';
+                this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+            }
+
+            async sendMessage() {
+                const message = this.messageInput.value.trim();
+                if (!message) return;
+
+                // Disable input while processing
+                this.setInputDisabled(true);
+
+                // Add user message
+                this.addMessage(message, 'user');
+                
+                // Clear input
+                this.messageInput.value = '';
+                this.adjustTextareaHeight();
+
+                // Show typing indicator
+                this.showTypingIndicator();
+
+                try {
+                    // Get AI response using Puter
+                    console.log('Sending message to Puter AI:', message);
+                    const response = await puter.ai.chat(message);
+                    console.log('Received response from Puter AI');
+                    
+                    // Hide typing indicator
+                    this.hideTypingIndicator();
+                    
+                    // Add AI response
+                    this.addMessage(response, 'assistant');
+                    
+                } catch (error) {
+                    console.error('Error getting AI response:', error);
+                    this.hideTypingIndicator();
+                    this.addMessage('Sorry, I encountered an error while processing your message. Please try again.', 'assistant', true);
+                } finally {
+                    // Re-enable input
+                    this.setInputDisabled(false);
+                    this.messageInput.focus();
+                }
+            }
+
+            addMessage(content, sender, isError = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.innerHTML = sender === 'user' ? '👤' : '🤖';
+
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                
+                if (isError) {
+                    messageContent.style.color = '#dc2626';
+                    messageContent.style.fontStyle = 'italic';
                 }
 
-            } catch (error) {
-                console.error('Error:', error);
-                showResult(`Error generating app: ${error.message}`, 'error');
-            } finally {
-                // Hide loading state
-                generateBtn.disabled = false;
-                loading.style.display = 'none';
+                // Format message content (basic markdown-like formatting)
+                messageContent.innerHTML = this.formatMessage(content);
+
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(messageContent);
+
+                // Remove welcome message if it exists
+                const welcomeMessage = this.chatMessages.querySelector('.welcome-message');
+                if (welcomeMessage) {
+                    welcomeMessage.remove();
+                }
+
+                this.chatMessages.appendChild(messageDiv);
+                this.scrollToBottom();
             }
+
+            formatMessage(content) {
+                // Basic formatting for code blocks, bold, etc.
+                return content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    .replace(/`(.*?)`/g, '<code style="background: #f1f5f9; padding: 2px 4px; border-radius: 3px; font-family: monospace;">$1</code>')
+                    .replace(/\n/g, '<br>');
+            }
+
+            showTypingIndicator() {
+                this.typingIndicator.style.display = 'flex';
+                this.scrollToBottom();
+            }
+
+            hideTypingIndicator() {
+                this.typingIndicator.style.display = 'none';
+            }
+
+            setInputDisabled(disabled) {
+                this.messageInput.disabled = disabled;
+                this.sendButton.disabled = disabled;
+                this.messageInput.style.opacity = disabled ? '0.7' : '1';
+            }
+
+            scrollToBottom() {
+                requestAnimationFrame(() => {
+                    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+                });
+            }
+
+            clearChat() {
+                if (confirm('Are you sure you want to clear the chat history?')) {
+                    this.chatMessages.innerHTML = `
+                        <div class="welcome-message">
+                            👋 Chat cleared! How can I help you today?
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Initialize the chat app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new ChatApp();
         });
 
-        function showResult(message, type) {
-            result.innerHTML = message;
-            result.className = `result ${type}`;
-            result.style.display = 'block';
-        }
+        // Handle page visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                document.getElementById('messageInput').focus();
+            }
+        });
     </script>
 </body>
 </html>
